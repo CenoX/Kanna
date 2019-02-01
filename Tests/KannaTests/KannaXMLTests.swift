@@ -62,6 +62,41 @@ class KannaXMLTests: XCTestCase {
             XCTAssert(false, "File not found. name: (\(filename))")
         }
     }
+    
+    func testXmlOtherEncoding() {
+        let filename = "test_XML_ExcelWorkbook_otherEncoding"
+        guard let path = Bundle(for:KannaXMLTests.self).path(forResource: filename, ofType:"xml") else {
+            return
+        }
+        if let xml = try? Data(contentsOf: URL(fileURLWithPath: path)),
+            let doc = try? XML(xml: xml, encoding: .shiftJIS) {
+            let namespaces = [
+                "o":  "urn:schemas-microsoft-com:office:office",
+                "ss": "urn:schemas-microsoft-com:office:spreadsheet"
+            ]
+            
+            if let author = doc.at_xpath("//o:Author", namespaces: namespaces) {
+                XCTAssert(author.text == "_tid_")
+            } else {
+                XCTAssert(false, "Author not found.")
+            }
+            
+            if let createDate = doc.at_xpath("//o:Created", namespaces: namespaces) {
+                XCTAssert(createDate.text == "2015-07-26T06:00:00Z")
+            } else {
+                XCTAssert(false, "Create date not found.")
+            }
+            
+            
+            for row in doc.xpath("//ss:Row", namespaces: namespaces) {
+                for cell in row.xpath("//ss:Data", namespaces: namespaces) {
+                    print(cell.text!)
+                }
+            }
+        } else {
+            XCTAssert(false, "File not found. name: (\(filename))")
+        }
+    }
 
     func testXmlThrows() {
         XCTAssertThrowsError(try XML(xml: "", encoding: .utf8))
